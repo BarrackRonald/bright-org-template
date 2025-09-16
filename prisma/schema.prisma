@@ -1,0 +1,241 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model SiteSettings {
+  id           Int      @id @default(autoincrement())
+  title        String
+  tagline      String?
+  description  String?
+  logoUrl      String?
+  heroImageUrl String?
+  heroVideoUrl String?   // <-- new field
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  about   About? @relation(fields: [aboutId], references: [id])
+  aboutId Int?   @unique
+}
+
+
+model About {
+  id         Int          @id @default(autoincrement())
+  history    String?
+  mission    String?
+  vision     String?
+  objectives String?
+  coreValues String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
+  // 🔥 New fields
+  quoteText  String?
+  quoteAuthor String?
+  ctaTitle   String?
+  ctaMessage String?
+
+  siteSettings SiteSettings?
+  milestones   Milestone[]  // ✅ reverse relation
+}
+
+model Milestone {
+  id          Int      @id @default(autoincrement())
+  year        Int
+  title       String
+  description String
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  about     About? @relation(fields: [aboutId], references: [id])
+  aboutId   Int?
+}
+
+
+model Program {
+  id           Int         @id @default(autoincrement())
+  title        String
+  slug         String      @unique
+  summary      String?
+  content      String?
+  imageUrl     String?
+  galleryUrls  Json?
+  videoUrl     String?
+  category     String?
+  tags         String?
+  donationLink String?
+  signupLink   String?
+
+  isPublished  Boolean     @default(false)
+  position     Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Coordinator
+  coordinator   TeamMember? @relation("ProgramCoordinator", fields: [coordinatorId], references: [id])
+  coordinatorId Int?
+
+  // ✅ New relations
+  programGallery     ProgramGallery[]
+  programImpactStats ProgramImpactStat[]
+  programTestimonials ProgramTestimonial[]
+}
+model ProgramTestimonial {
+  id        Int      @id @default(autoincrement())
+  program   Program  @relation(fields: [programId], references: [id])
+  programId Int
+  name      String
+  role      String?
+  message   String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+}
+model ProgramImpactStat {
+  id        Int      @id @default(autoincrement())
+  program   Program  @relation(fields: [programId], references: [id])
+  programId Int
+  label     String
+  value     Int
+  description String?
+}
+model ProgramGallery {
+  id        Int      @id @default(autoincrement())
+  program   Program  @relation(fields: [programId], references: [id])
+  programId Int
+  mediaUrl  String
+  type      String   @default("image") // "image" | "video"
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model TeamMember {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  role      String
+  bio       String?
+  photoUrl  String?
+  orderNum  Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+
+  coordinatedPrograms Program[] @relation("ProgramCoordinator")
+}
+
+
+model Article {
+  id          Int       @id @default(autoincrement())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String?
+  coverUrl    String?
+  publishedAt DateTime?
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model Event {
+  id        Int       @id @default(autoincrement())
+  title     String    @unique
+  slug      String    @unique
+  summary   String?
+  content   String?
+  coverUrl  String?
+  location  String?
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ImpactStat {
+  id          Int     @id @default(autoincrement())
+  label       String  @unique
+  value       Int
+  description String?
+}
+
+model Partner {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  logoUrl String?
+  website String?
+}
+
+model Donation {
+  id            Int      @id @default(autoincrement())
+  donorName     String?
+  donorEmail    String?
+  amount        Float
+  currency      String   @default("KES")
+  method        String // e.g. "M-Pesa", "PayPal", "Stripe"
+  transactionId String?
+  status        String   @default("pending") // pending, completed, failed
+  createdAt     DateTime @default(now())
+}
+
+model GalleryItem {
+  id        Int      @id @default(autoincrement())
+  title     String?   @unique
+  imageUrl  String
+  category  String? // e.g. "event", "program", "team"
+  createdAt DateTime @default(now())
+}
+
+model VolunteerApplication {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  message   String?
+  status    String   @default("pending") // pending, reviewed, accepted, rejected
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Testimonial {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String? // e.g. "Student Beneficiary"
+  message   String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model FAQ {
+  id       Int    @id @default(autoincrement())
+  question String
+  answer   String
+  orderNum Int    @default(0)
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String // hashed
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
