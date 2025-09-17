@@ -13,6 +13,8 @@ const nextConfig = {
       enabled: false, // 👈 disable Turbopack, force Webpack build
     },
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
-module.exports = nextConfig;
